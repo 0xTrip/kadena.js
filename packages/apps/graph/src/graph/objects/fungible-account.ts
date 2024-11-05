@@ -52,110 +52,251 @@ const getTransfers = (
   // The query with the pagination cursor is composed separately
   // as Prisma rightfully does not allow dynamic statements in sql queries
   if (!condition?.cursor) {
+    console.log('no condition');
+
     return prismaClient.$queryRaw`
-SELECT "res0" AS "block_hash",
-"res1" AS "request_key",
-"res2" AS "chain_id",
-"res3" AS "height",
-"res4" AS "order_index",
-"res5" AS "module_name",
-"res6" AS "module_hash",
-"res7" AS "sender_account",
-"res8" AS "receiver_account",
-"res9" AS "amount"
-FROM (
-SELECT "res0" AS "res0", "t0"."res1" AS "res1", "t0"."res2" AS "res2", "t0"."res3" AS "res3", "t0"."res4" AS "res4", "t0"."res5" AS "res5", "t0"."res6" AS "res6", "t0"."res7" AS "res7", "t0"."res8" AS "res8", "t0"."res9" AS "res9", "t1"."creationtime" AS "res10"
-FROM (
-  (
-    SELECT "t0"."res0" AS "res0", "t0"."res1" AS "res1", "t0"."res2" AS "res2", "t0"."res3" AS "res3", "t0"."res4" AS "res4", "t0"."res5" AS "res5", "t0"."res6" AS "res6", "t0"."res7" AS "res7", "t0"."res8" AS "res8", "t0"."res9" AS "res9"
-    FROM (
-      SELECT "t0"."block" AS "res0", "t0"."requestkey" AS "res1", "t0"."chainid" AS "res2", "t0"."height" AS "res3", "t0"."idx" AS "res4", "t0"."modulename" AS "res5", "t0"."modulehash" AS "res6", "t0"."from_acct" AS "res7", "t0"."to_acct" AS "res8", "t0"."amount" AS "res9"
-      FROM "transfers" AS "t0"
-      WHERE ("t0"."from_acct") = (${accountName})
-      ORDER BY "t0"."height" DESC, "t0"."requestkey" DESC, "t0"."idx" ASC
-    ) AS "t0"
-  )
-  UNION ALL
-  (
-    SELECT "t0"."res0" AS "res0", "t0"."res1" AS "res1", "t0"."res2" AS "res2", "t0"."res3" AS "res3", "t0"."res4" AS "res4", "t0"."res5" AS "res5", "t0"."res6" AS "res6", "t0"."res7" AS "res7", "t0"."res8" AS "res8", "t0"."res9" AS "res9"
-    FROM (
-      SELECT "t0"."block" AS "res0", "t0"."requestkey" AS "res1", "t0"."chainid" AS "res2", "t0"."height" AS "res3", "t0"."idx" AS "res4", "t0"."modulename" AS "res5", "t0"."modulehash" AS "res6", "t0"."from_acct" AS "res7", "t0"."to_acct" AS "res8", "t0"."amount" AS "res9"
-      FROM "transfers" AS "t0"
-      WHERE ("t0"."to_acct") = (${accountName})
-      ORDER BY "t0"."height" DESC, "t0"."requestkey" DESC, "t0"."idx" ASC
-    ) AS "t0"
-  )
-) AS "t0"
-CROSS JOIN "blocks" AS "t1"
-WHERE ((((("t0"."res1", -("t0"."res4"))) < (('cb', -(0))))
-  AND (("t0"."res5") = (${fungibleName}))) AND (("t0"."res2") = (0)))
-  AND (("t0"."res0") = ("t1"."hash"))
-ORDER BY "t0"."res3" DESC, "t0"."res1" DESC, "t0"."res4" ASC
-) as "t12"
-LIMIT ${condition?.take || 21}
-OFFSET 0;
-`;
+SELECT
+	"t0"."res1" AS "block_hash",
+	"t0"."res2" AS "request_key",
+	"t0"."res3" AS "chain_id",
+	"t0"."res4" AS "height",
+	"t0"."res5" AS "order_index",
+	"t0"."res6" AS "module_name",
+	"t0"."res7" AS "module_hash",
+	"t0"."res8" AS "sender_account",
+	"t0"."res9" AS "receiver_account",
+	"t0"."res10" AS "amount",
+	"t0"."res11" AS "row_number",
+	"t0"."res0" AS "is_fungible"
+      FROM
+	(
+		SELECT
+			("t0"."res5") = (${fungibleName}) AS "res0",
+			"t0"."res0" AS "res1",
+			"t0"."res1" AS "res2",
+			"t0"."res2" AS "res3",
+			"t0"."res3" AS "res4",
+			"t0"."res4" AS "res5",
+			"t0"."res5" AS "res6",
+			"t0"."res6" AS "res7",
+			"t0"."res7" AS "res8",
+			"t0"."res8" AS "res9",
+			"t0"."res9" AS "res10",
+			ROW_NUMBER() OVER (
+				ORDER BY
+					"t0"."res3" DESC,
+					"t0"."res1" DESC,
+					"t0"."res4" ASC
+			) AS "res11"
+		FROM
+			(
+				(
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."from_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+				UNION
+				ALL (
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."to_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+			) AS "t0"
+		LIMIT
+			50000
+	) AS "t0"
+	WHERE "t0"."res0" = true
+      ORDER BY
+	"t0"."res4" DESC,
+	"t0"."res2" DESC,
+	"t0"."res5" ASC
+OFFSET ${condition?.skip || 0}
+LIMIT ${condition?.take || 21};
+	`;
   } else if (condition.take >= 0) {
     const { blockHash, chainId, orderIndex, moduleHash, requestKey } =
       condition.cursor.blockHash_chainId_orderIndex_moduleHash_requestKey!;
 
+    console.log('condition.take is positive, page forward');
     return prismaClient.$queryRaw`
-      WITH transfers_by_acct AS (
-
       SELECT
-        *
-      FROM
-        (
-
-          SELECT
-            *
-          FROM
-            transfers
-
-          WHERE
-            from_acct = ${accountName}
-          ORDER BY
-            height DESC,
-            requestkey DESC,
-            idx ASC
-        ) as t0
-
-      UNION ALL
-
-      SELECT
-        *
-      FROM
-        (
-
-          SELECT
-            *
-          FROM
-            transfers
-
-          WHERE
-            to_acct = ${accountName}
-          ORDER BY
-            height DESC,
-            requestkey DESC,
-            idx ASC
-        ) AS t1
-      )
-
-      SELECT
-        amount,
-        block AS block_hash,
-        chainid AS chain_id,
-        from_acct AS sender_account,
-        height,
-        idx AS order_index,
-        modulehash AS module_hash,
-        requestkey AS request_key,
-        to_acct AS receiver_account
-      FROM
-        transfers_by_acct
-      WHERE
+	"t0"."res1" AS "block_hash",
+	"t0"."res2" AS "request_key",
+	"t0"."res3" AS "chain_id",
+	"t0"."res4" AS "height",
+	"t0"."res5" AS "order_index",
+	"t0"."res6" AS "module_name",
+	"t0"."res7" AS "module_hash",
+	"t0"."res8" AS "sender_account",
+	"t0"."res9" AS "receiver_account",
+	"t0"."res10" AS "amount",
+	"t0"."res11" AS "row_number",
+	"t0"."res0" AS "is_fungible"
+            FROM
+	(
+		SELECT
+			("t0"."res5") = (${fungibleName}) AS "res0",
+			"t0"."res0" AS "res1",
+			"t0"."res1" AS "res2",
+			"t0"."res2" AS "res3",
+			"t0"."res3" AS "res4",
+			"t0"."res4" AS "res5",
+			"t0"."res5" AS "res6",
+			"t0"."res6" AS "res7",
+			"t0"."res7" AS "res8",
+			"t0"."res8" AS "res9",
+			"t0"."res9" AS "res10",
+			ROW_NUMBER() OVER (
+				ORDER BY
+					"t0"."res3" DESC,
+					"t0"."res1" DESC,
+					"t0"."res4" ASC
+			) AS "res11"
+		FROM
+			(
+				(
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."from_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+				UNION
+				ALL (
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."to_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+			) as "t0"
+		 WHERE
       (
-        ("height", "idx") <= (
+        (t0."res3", t0."res4") <= (
 
           SELECT
             "height",
@@ -178,79 +319,141 @@ OFFSET 0;
             )
           )
         )
-      --AND modulename = ${fungibleName}
-
-      ORDER BY
-        height DESC,
-        requestkey DESC,
-        idx ASC
-      OFFSET 1
-      LIMIT ${condition?.take || 21};`;
+		LIMIT
+			50000
+	) AS "t0"
+	WHERE "t0"."res0" = true
+            ORDER BY
+	"t0"."res4" DESC,
+	"t0"."res2" DESC,
+	"t0"."res5" ASC
+OFFSET ${condition?.skip || 0}
+LIMIT ${condition?.take || 21};
+`;
   } else {
     const { blockHash, chainId, orderIndex, moduleHash, requestKey } =
       condition.cursor.blockHash_chainId_orderIndex_moduleHash_requestKey!;
+    console.log('condition is negative, page back');
 
     return prismaClient.$queryRaw`
-      WITH transfers_by_acct AS (
-
       SELECT
-        *
-      FROM
-        (
-
-          SELECT
-            *
-          FROM
-            transfers
-
-          WHERE
-            from_acct = ${accountName}
-          ORDER BY
-            height DESC,
-            requestkey DESC,
-            idx ASC
-        ) as t0
-
-      UNION ALL
-
-      SELECT
-        *
-      FROM
-        (
-
-          SELECT
-            *
-          FROM
-            transfers
-
-          WHERE
-            to_acct = ${accountName}
-          ORDER BY
-            height DESC,
-            requestkey DESC,
-            idx ASC
-        ) AS t1
-      )
-
-      SELECT
-        amount,
-        block AS block_hash,
-        chainid AS chain_id,
-        from_acct AS sender_account,
-        height,
-        idx AS order_index,
-        modulehash AS module_hash,
-        requestkey AS request_key,
-        to_acct AS receiver_account
-      FROM
-        transfers_by_acct
-      WHERE
+	"t0"."res1" AS "block_hash",
+	"t0"."res2" AS "request_key",
+	"t0"."res3" AS "chain_id",
+	"t0"."res4" AS "height",
+	"t0"."res5" AS "order_index",
+	"t0"."res6" AS "module_name",
+	"t0"."res7" AS "module_hash",
+	"t0"."res8" AS "sender_account",
+	"t0"."res9" AS "receiver_account",
+	"t0"."res10" AS "amount",
+	"t0"."res11" AS "row_number",
+	"t0"."res0" AS "is_fungible"
+            FROM
+	(
+		SELECT
+			("t0"."res5") = (${fungibleName}) AS "res0",
+			"t0"."res0" AS "res1",
+			"t0"."res1" AS "res2",
+			"t0"."res2" AS "res3",
+			"t0"."res3" AS "res4",
+			"t0"."res4" AS "res5",
+			"t0"."res5" AS "res6",
+			"t0"."res6" AS "res7",
+			"t0"."res7" AS "res8",
+			"t0"."res8" AS "res9",
+			"t0"."res9" AS "res10",
+			ROW_NUMBER() OVER (
+				ORDER BY
+					"t0"."res3" DESC,
+					"t0"."res1" DESC,
+					"t0"."res4" ASC
+			) AS "res11"
+		FROM
+			(
+				(
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."from_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+				UNION
+				ALL (
+					SELECT
+						"t0"."res0" AS "res0",
+						"t0"."res1" AS "res1",
+						"t0"."res2" AS "res2",
+						"t0"."res3" AS "res3",
+						"t0"."res4" AS "res4",
+						"t0"."res5" AS "res5",
+						"t0"."res6" AS "res6",
+						"t0"."res7" AS "res7",
+						"t0"."res8" AS "res8",
+						"t0"."res9" AS "res9"
+					FROM
+						(
+							SELECT
+								"t0"."block" AS "res0",
+								"t0"."requestkey" AS "res1",
+								"t0"."chainid" AS "res2",
+								"t0"."height" AS "res3",
+								"t0"."idx" AS "res4",
+								"t0"."modulename" AS "res5",
+								"t0"."modulehash" AS "res6",
+								"t0"."from_acct" AS "res7",
+								"t0"."to_acct" AS "res8",
+								"t0"."amount" AS "res9"
+							FROM
+								"transfers" AS "t0"
+							WHERE
+								("t0"."to_acct") = (
+									${accountName}
+								)
+							ORDER BY
+								"t0"."height" DESC,
+								"t0"."requestkey" DESC,
+								"t0"."idx" ASC
+						) AS "t0"
+				)
+			) as "t0"
+		 WHERE
       (
-        ("height", "idx") >= (
+        (t0."res3", "res4") > (
 
           SELECT
-            "height",
-            "idx"
+            "height" as "res3",
+            "idx" as "res4"
           FROM
             "transfers"
           WHERE
@@ -269,15 +472,17 @@ OFFSET 0;
             )
           )
         )
-      --AND modulename = ${fungibleName}
-
-      ORDER BY
-        height DESC,
-        requestkey DESC,
-        idx ASC
-      -- OFFSET ${condition?.skip || 0}
-      -- LIMIT ${condition?.take * -1 || 21}
-      ;`;
+		LIMIT
+			50000
+	) AS "t0"
+WHERE "t0"."res0" = true
+ORDER BY
+	"t0"."res4" DESC,
+	"t0"."res2" DESC,
+	"t0"."res5" ASC
+OFFSET ${condition?.skip || 0}
+LIMIT ${condition?.take * -1 || 20};
+`;
   }
 };
 
@@ -456,7 +661,6 @@ export default builder.node(
               )) as any
             ).map(keysToCamel);
 
-            console.log('result', JSON.stringify(result, null, 2));
             return result;
           } catch (error) {
             throw normalizeError(error);
