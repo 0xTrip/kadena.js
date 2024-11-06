@@ -1,5 +1,12 @@
 # @kadena/kode-ui
 
+## 0.19.0
+
+### Minor Changes
+
+- 7cefeb1: add SideBar Component
+- 14e809a: Text size extended with inherit
+
 ## 0.18.0
 
 ### Minor Changes

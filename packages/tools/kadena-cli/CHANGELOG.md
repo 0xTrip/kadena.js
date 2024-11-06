@@ -1,5 +1,11 @@
 # @kadena/kadena-cli
 
+## 1.3.6
+
+### Patch Changes
+
+- ca64e67: Fixed malformed json error in tx send
+
 ## 1.3.5
 
 ### Patch Changes
