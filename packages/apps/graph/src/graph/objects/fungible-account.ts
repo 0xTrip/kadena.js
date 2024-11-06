@@ -55,6 +55,7 @@ const getTransfers = (
     console.log('no condition');
 
     return prismaClient.$queryRaw`
+
 SELECT
 	"t0"."res1" AS "block_hash",
 	"t0"."res2" AS "request_key",
@@ -68,7 +69,7 @@ SELECT
 	"t0"."res10" AS "amount",
 	"t0"."res11" AS "row_number",
 	"t0"."res0" AS "is_fungible"
-      FROM
+FROM
 	(
 		SELECT
 			("t0"."res5") = (${fungibleName}) AS "res0",
@@ -118,11 +119,10 @@ SELECT
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."from_acct") = (
-									${accountName}
-								)
+								("t0"."from_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
@@ -156,11 +156,10 @@ SELECT
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."to_acct") = (
-									${accountName}
-								)
+								("t0"."to_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
@@ -169,21 +168,24 @@ SELECT
 		LIMIT
 			50000
 	) AS "t0"
-	WHERE "t0"."res0" = true
-      ORDER BY
-	"t0"."res4" DESC,
-	"t0"."res2" DESC,
-	"t0"."res5" ASC
-OFFSET ${condition?.skip || 0}
-LIMIT ${condition?.take || 21};
-	`;
+WHERE
+	"t0"."res0" = true
+ORDER BY
+	"height" DESC,
+	"chain_id" ASC,
+	"request_key" DESC,
+	"order_index" ASC OFFSET ${condition?.skip || 0}
+LIMIT
+	${condition?.take || 21};
+
+`;
   } else if (condition.take >= 0) {
     const { blockHash, chainId, orderIndex, moduleHash, requestKey } =
       condition.cursor.blockHash_chainId_orderIndex_moduleHash_requestKey!;
 
-    console.log('condition.take is positive, page forward');
     return prismaClient.$queryRaw`
-      SELECT
+
+SELECT
 	"t0"."res1" AS "block_hash",
 	"t0"."res2" AS "request_key",
 	"t0"."res3" AS "chain_id",
@@ -196,7 +198,7 @@ LIMIT ${condition?.take || 21};
 	"t0"."res10" AS "amount",
 	"t0"."res11" AS "row_number",
 	"t0"."res0" AS "is_fungible"
-            FROM
+FROM
 	(
 		SELECT
 			("t0"."res5") = (${fungibleName}) AS "res0",
@@ -246,11 +248,10 @@ LIMIT ${condition?.take || 21};
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."from_acct") = (
-									${accountName}
-								)
+								("t0"."from_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
@@ -284,51 +285,52 @@ LIMIT ${condition?.take || 21};
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."to_acct") = (
-									${accountName}
-								)
+								("t0"."to_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
 				)
 			) as "t0"
-		 WHERE
-      (
-        (t0."res3", t0."res4") <= (
-
-          SELECT
-            "height",
-            "idx"
-          FROM
-            "transfers"
-          WHERE
-            (
-              block,
-              chainid,
-              idx,
-              modulehash,
-              requestkey
-            ) = (
-              ${blockHash},
-              ${chainId},
-              ${orderIndex},
-              ${moduleHash},
-              ${requestKey}
-            )
-          )
-        )
+		WHERE
+			(
+				(t0."res3", t0."res4") <= (
+					SELECT
+						"height",
+						"idx"
+					FROM
+						"transfers"
+					WHERE
+						(
+							block,
+							chainid,
+							idx,
+							modulehash,
+							requestkey
+						) = (
+							${blockHash},
+							${chainId},
+							${orderIndex},
+							${moduleHash},
+							${requestKey}
+						)
+				)
+			)
 		LIMIT
 			50000
 	) AS "t0"
-	WHERE "t0"."res0" = true
-            ORDER BY
-	"t0"."res4" DESC,
-	"t0"."res2" DESC,
-	"t0"."res5" ASC
-OFFSET ${condition?.skip || 0}
-LIMIT ${condition?.take || 21};
+WHERE
+	"t0"."res0" = true
+ORDER BY
+	"height" DESC,
+	"chain_id" ASC,
+	"request_key" DESC,
+	"order_index" ASC OFFSET ${condition?.skip || 0}
+LIMIT
+	${condition?.take || 21};
+
 `;
   } else {
     const { blockHash, chainId, orderIndex, moduleHash, requestKey } =
@@ -336,7 +338,7 @@ LIMIT ${condition?.take || 21};
     console.log('condition is negative, page back');
 
     return prismaClient.$queryRaw`
-      SELECT
+SELECT
 	"t0"."res1" AS "block_hash",
 	"t0"."res2" AS "request_key",
 	"t0"."res3" AS "chain_id",
@@ -349,7 +351,7 @@ LIMIT ${condition?.take || 21};
 	"t0"."res10" AS "amount",
 	"t0"."res11" AS "row_number",
 	"t0"."res0" AS "is_fungible"
-            FROM
+FROM
 	(
 		SELECT
 			("t0"."res5") = (${fungibleName}) AS "res0",
@@ -399,11 +401,10 @@ LIMIT ${condition?.take || 21};
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."from_acct") = (
-									${accountName}
-								)
+								("t0"."from_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
@@ -437,51 +438,51 @@ LIMIT ${condition?.take || 21};
 							FROM
 								"transfers" AS "t0"
 							WHERE
-								("t0"."to_acct") = (
-									${accountName}
-								)
+								("t0"."to_acct") = (${accountName})
 							ORDER BY
 								"t0"."height" DESC,
+								"t0"."chainid" ASC,
 								"t0"."requestkey" DESC,
 								"t0"."idx" ASC
 						) AS "t0"
 				)
 			) as "t0"
-		 WHERE
-      (
-        (t0."res3", "res4") > (
-
-          SELECT
-            "height" as "res3",
-            "idx" as "res4"
-          FROM
-            "transfers"
-          WHERE
-            (
-              block,
-              chainid,
-              idx,
-              modulehash,
-              requestkey
-            ) = (
-              ${blockHash},
-              ${chainId},
-              ${orderIndex},
-              ${moduleHash},
-              ${requestKey}
-            )
-          )
-        )
+		WHERE
+			(
+				(t0."res3", "res4") > (
+					SELECT
+						"height" as "res3",
+						"idx" as "res4"
+					FROM
+						"transfers"
+					WHERE
+						(
+							block,
+							chainid,
+							idx,
+							modulehash,
+							requestkey
+						) = (
+							${blockHash},
+							${chainId},
+							${orderIndex},
+							${moduleHash},
+							${requestKey}
+						)
+				)
+			)
 		LIMIT
 			50000
 	) AS "t0"
-WHERE "t0"."res0" = true
+WHERE
+	"t0"."res0" = true
 ORDER BY
-	"t0"."res4" DESC,
-	"t0"."res2" DESC,
-	"t0"."res5" ASC
-OFFSET ${condition?.skip || 0}
-LIMIT ${condition?.take * -1 || 20};
+	"height" DESC,
+	"chain_id" ASC,
+	"request_key" DESC,
+	"order_index" ASC OFFSET ${condition?.skip || 0}
+LIMIT
+	${condition?.take * -1 || 20};
 `;
   }
 };
